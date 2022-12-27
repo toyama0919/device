@@ -31,7 +31,7 @@ namespace config {
     } LedFeedbackProfile;
 
     // Defines what kind of LED profile you want.
-    const LedFeedbackProfile ledFeedback = LED_SETUP_ONLY;
+    const LedFeedbackProfile ledFeedback = LED_OFF;
 
     // Enables/disables cloud-control through the "deviceapi.getirkit.com" server.
     // If you use your IRKit device exclusively over your LAN, you can disable
