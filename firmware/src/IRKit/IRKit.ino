@@ -1,16 +1,16 @@
 /*
  Copyright (C) 2013-2014 Masakazu Ohtsuka
-  
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 2 of the License, or
  (at your option) any later version.
-  
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
-  
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -216,7 +216,7 @@ void process_commands() {
 void on_irkit_ready() {
     // blue: ready
     if (config::ledFeedback <= config::LED_VERBOSE) {
-        color.setLedColor( 0, 0, 1, FullColorLed::ALWAYS_ON ); 
+        color.setLedColor( 0, 0, 1, FullColorLed::ALWAYS_ON );
     } else if (config::ledFeedback <= config::LED_QUIET) {
         color.setLedColor( 0, 0, 1, FullColorLed::BLINK_THEN_OFF, 1);
     } else {
@@ -234,11 +234,23 @@ void on_ir_receive() {
             IRLOG_PRINTLN("!E31");
             return;
         }
-        int8_t cid = irkit_httpclient_post_messages();
-        if (cid >= 0) {
+
+        // Only POST to cloud if cloud control is enabled
+        if (config::useCloudControl) {
+            int8_t cid = irkit_httpclient_post_messages();
+            if (cid >= 0) {
+                if (config::ledFeedback <= config::LED_QUIET) {
+                    FullColorLed::LightMode lightMode = (config::ledFeedback == config::LED_VERBOSE)? FullColorLed::BLINK_THEN_ON : FullColorLed::BLINK_THEN_OFF;
+                    color.setLedColor( 0, 0, 1, lightMode, 1 ); // received: blue blink for 1sec
+                } else {
+                    color.off();
+                }
+            }
+        } else {
+            // Local-only mode: just indicate reception
             if (config::ledFeedback <= config::LED_QUIET) {
                 FullColorLed::LightMode lightMode = (config::ledFeedback == config::LED_VERBOSE)? FullColorLed::BLINK_THEN_ON : FullColorLed::BLINK_THEN_OFF;
-                color.setLedColor( 0, 0, 1, lightMode, 1 ); // received: blue blink for 1sec
+                color.setLedColor( 0, 0, 1, lightMode, 1 );
             } else {
                 color.off();
             }
@@ -314,7 +326,7 @@ void connect() {
     }
 
     if (gs.isListening()) {
-        
+
         if (!config::useCloudControl) {
             // No WAN access, we don't need to validate key, we're ready.
             IR_state( IR_IDLE );
@@ -322,7 +334,7 @@ void connect() {
         } else {
             // start mDNS
             gs.setupMDNS();
-    
+
             if (keys.isAPIKeySet() && ! keys.isValid()) {
                 irkit_httpclient_post_door();
             }
